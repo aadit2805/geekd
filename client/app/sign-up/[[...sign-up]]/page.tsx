@@ -8,13 +8,13 @@ export default function SignUpPage() {
       <SignUp
         appearance={{
           elements: {
-            formButtonPrimary: 'bg-[var(--terracotta)] hover:bg-[var(--terracotta-dark)]',
+            formButtonPrimary: 'bg-[var(--terracotta)] hover:brightness-90',
             card: 'bg-white border border-[var(--taupe)]/20 shadow-sm',
             headerTitle: 'font-[family-name:var(--font-serif)] text-[var(--coffee)]',
             headerSubtitle: 'text-[var(--mocha)]',
             socialButtonsBlockButton: 'border-[var(--taupe)]/30 hover:bg-[var(--linen)]',
             formFieldInput: 'border-[var(--taupe)]/30 focus:border-[var(--terracotta)] focus:ring-[var(--terracotta)]',
-            footerActionLink: 'text-[var(--terracotta)] hover:text-[var(--terracotta-dark)]',
+            footerActionLink: 'text-[var(--terracotta)] hover:text-[var(--coffee)]',
           },
         }}
       />

@@ -11,17 +11,6 @@ export default function StatsPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
-  const handleDeleteAllData = async () => {
-    setDeleting(true);
-    try {
-      await deleteAllUserData();
-      window.location.reload();
-    } catch (error) {
-      console.error('Error deleting data:', error);
-      setDeleting(false);
-    }
-  };
-
   useEffect(() => {
     loadStats();
   }, []);
@@ -37,439 +26,243 @@ export default function StatsPage() {
     }
   };
 
+  const handleDeleteAllData = async () => {
+    setDeleting(true);
+    try {
+      await deleteAllUserData();
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting data:', error);
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center py-32">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-2 border-[var(--taupe)] border-t-[var(--coffee)] rounded-full"
-        />
+      <div className="flex justify-center py-20">
+        <div className="w-6 h-6 border-2 border-[var(--taupe)] border-t-[var(--coffee)] rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!stats) {
     return (
-      <div className="text-center py-32">
-        <p className="text-[var(--latte)]">Unable to load insights</p>
+      <div className="text-center py-20">
+        <p className="text-[var(--mocha)]">Unable to load stats</p>
       </div>
     );
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
-
-  // Calculate max rating for trend chart
-  const maxTrendRating = stats.rating_trends.length > 0
-    ? Math.max(...stats.rating_trends.map(t => Number(t.avg_rating)))
-    : 5;
-
   return (
-    <div>
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-16"
-      >
-        <h1 className="font-[family-name:var(--font-serif)] text-4xl md:text-5xl text-[var(--coffee)] mb-4">
-          Insights
-        </h1>
-        <p className="text-[var(--latte)] tracking-wide">
-          Patterns in your palate
-        </p>
-      </motion.div>
-
-      {/* Key Stats */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12"
-      >
-        {/* Total Drinks */}
+    <div className="max-w-2xl mx-auto">
+      {/* Streak Banner */}
+      {stats.current_streak > 0 && (
         <motion.div
-          variants={itemVariants}
-          className="bg-white border border-[var(--taupe)]/20 rounded-2xl p-8 text-center"
-        >
-          <p className="text-xs tracking-[0.2em] uppercase text-[var(--latte)] mb-4">
-            Total Entries
-          </p>
-          <p className="font-[family-name:var(--font-serif)] text-6xl md:text-7xl text-[var(--coffee)]">
-            {stats.total_drinks}
-          </p>
-          <p className="text-sm text-[var(--mocha)] mt-4">
-            {stats.total_drinks === 1 ? 'coffee documented' : 'coffees documented'}
-          </p>
-        </motion.div>
-
-        {/* Average Rating */}
-        <motion.div
-          variants={itemVariants}
-          className="bg-white border border-[var(--taupe)]/20 rounded-2xl p-8 text-center"
-        >
-          <p className="text-xs tracking-[0.2em] uppercase text-[var(--latte)] mb-4">
-            Average Rating
-          </p>
-          <div className="flex items-baseline justify-center gap-2">
-            <p className="font-[family-name:var(--font-serif)] text-6xl md:text-7xl text-[var(--coffee)]">
-              {Number(stats.average_rating).toFixed(1)}
-            </p>
-            <span className="text-2xl text-[var(--latte)]">/ 5</span>
-          </div>
-          <p className="text-sm text-[var(--mocha)] mt-4">
-            {Number(stats.average_rating) >= 4 ? 'You have refined taste' :
-             Number(stats.average_rating) >= 3 ? 'A discerning palate' :
-             'Still exploring'}
-          </p>
-        </motion.div>
-      </motion.div>
-
-      {/* Rating Trends Chart */}
-      {stats.rating_trends.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-12"
+          className="mb-8 p-4 bg-gradient-to-r from-[var(--terracotta)]/10 to-[var(--sage)]/10 border border-[var(--terracotta)]/20 rounded-xl text-center"
         >
-          <h2 className="font-[family-name:var(--font-serif)] text-2xl text-[var(--coffee)] mb-6">
-            Rating Trend
-          </h2>
-          <div className="bg-white border border-[var(--taupe)]/20 rounded-2xl p-6">
-            <div className="flex items-end gap-2 h-40">
-              {stats.rating_trends.map((trend, index) => {
-                const height = (Number(trend.avg_rating) / 5) * 100;
-                const date = new Date(trend.week);
-                return (
-                  <motion.div
-                    key={trend.week}
-                    initial={{ height: 0 }}
-                    animate={{ height: `${height}%` }}
-                    transition={{ duration: 0.5, delay: 0.3 + index * 0.05 }}
-                    className="flex-1 group relative"
-                  >
-                    <div
+          <p className="text-sm text-[var(--mocha)]">
+            <span className="text-2xl font-medium text-[var(--coffee)]">{stats.current_streak}</span>
+            {' '}day streak
+          </p>
+        </motion.div>
+      )}
+
+      {/* Key Numbers */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+      >
+        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 text-center">
+          <p className="text-2xl font-medium text-[var(--coffee)]">{stats.total_drinks}</p>
+          <p className="text-xs text-[var(--taupe-dark)]">cups</p>
+        </div>
+        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 text-center">
+          <p className="text-2xl font-medium text-[var(--coffee)]">{stats.cafes_visited}</p>
+          <p className="text-xs text-[var(--taupe-dark)]">cafes</p>
+        </div>
+        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 text-center">
+          <p className="text-2xl font-medium text-[var(--coffee)]">{Number(stats.average_rating).toFixed(1)}</p>
+          <p className="text-xs text-[var(--taupe-dark)]">avg rating</p>
+        </div>
+        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 text-center">
+          <p className="text-2xl font-medium text-[var(--coffee)]">{stats.longest_streak}</p>
+          <p className="text-xs text-[var(--taupe-dark)]">best streak</p>
+        </div>
+      </motion.div>
+
+      {/* Milestones */}
+      {stats.milestones.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8"
+        >
+          <h2 className="text-xs font-medium text-[var(--taupe-dark)] mb-3">Milestones</h2>
+          <div className="flex flex-wrap gap-2">
+            {stats.milestones.map((m) => (
+              <span
+                key={m.label}
+                className="px-3 py-1.5 text-sm bg-[var(--linen)] text-[var(--mocha)] rounded-full"
+              >
+                {m.label}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* This Week / Month */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15 }}
+        className="grid grid-cols-2 gap-4 mb-8"
+      >
+        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4">
+          <p className="text-xs text-[var(--taupe-dark)] mb-1">This week</p>
+          <p className="text-xl font-medium text-[var(--coffee)]">{stats.drinks_this_week} cups</p>
+        </div>
+        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4">
+          <p className="text-xs text-[var(--taupe-dark)] mb-1">This month</p>
+          <p className="text-xl font-medium text-[var(--coffee)]">{stats.drinks_this_month} cups</p>
+        </div>
+      </motion.div>
+
+      {/* Top Cafes */}
+      {stats.top_cafes.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8"
+        >
+          <h2 className="text-xs font-medium text-[var(--taupe-dark)] mb-3">Top Cafes</h2>
+          <div className="bg-white border border-[var(--taupe)]/20 rounded-xl divide-y divide-[var(--taupe)]/10">
+            {stats.top_cafes.slice(0, 5).map((cafe, i) => (
+              <div key={cafe.cafe_name} className="flex items-center justify-between p-3">
+                <div className="flex items-center gap-3">
+                  <span className={clsx(
+                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium",
+                    i === 0 ? "bg-[var(--terracotta)] text-white" : "bg-[var(--linen)] text-[var(--mocha)]"
+                  )}>
+                    {i + 1}
+                  </span>
+                  <span className="text-[var(--coffee)]">{cafe.cafe_name}</span>
+                </div>
+                <span className="text-sm text-[var(--taupe-dark)]">{cafe.visit_count}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Drink Types */}
+      {stats.drink_type_breakdown.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="mb-8"
+        >
+          <h2 className="text-xs font-medium text-[var(--taupe-dark)] mb-3">Favorite Drinks</h2>
+          <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 space-y-3">
+            {stats.drink_type_breakdown.slice(0, 5).map((type, i) => {
+              const max = Math.max(...stats.drink_type_breakdown.map(t => Number(t.count)));
+              const pct = (Number(type.count) / max) * 100;
+              return (
+                <div key={type.drink_type}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-[var(--coffee)]">{type.drink_type}</span>
+                    <span className="text-[var(--taupe-dark)]">{type.count}</span>
+                  </div>
+                  <div className="h-1.5 bg-[var(--linen)] rounded-full">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ delay: 0.3 + i * 0.05 }}
                       className={clsx(
-                        "w-full rounded-t-lg transition-colors",
-                        "bg-gradient-to-t from-[var(--terracotta-muted)] to-[var(--terracotta)]",
-                        "group-hover:from-[var(--terracotta)] group-hover:to-[var(--sage)]"
+                        "h-full rounded-full",
+                        i === 0 ? "bg-[var(--terracotta)]" : "bg-[var(--taupe)]"
                       )}
-                      style={{ height: '100%' }}
                     />
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <div className="bg-[var(--espresso)] text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                        {Number(trend.avg_rating).toFixed(1)} avg ({trend.drink_count} drinks)
-                      </div>
-                    </div>
-                    {/* Week label */}
-                    <p className="text-[10px] text-[var(--taupe-dark)] text-center mt-2">
-                      {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </p>
-                  </motion.div>
-                );
-              })}
-            </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </motion.div>
       )}
 
       {/* Best Day & Time */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12"
-      >
-        {/* Best Day */}
-        {stats.best_day && (
-          <div className="bg-white border border-[var(--taupe)]/20 rounded-2xl p-6">
-            <h3 className="text-xs tracking-[0.2em] uppercase text-[var(--latte)] mb-4">
-              Best Day for Coffee
-            </h3>
-            <p className="font-[family-name:var(--font-serif)] text-3xl text-[var(--coffee)] mb-2">
-              {stats.best_day.day}
-            </p>
-            <p className="text-sm text-[var(--mocha)] mb-4">
-              {Number(stats.best_day.avg_rating).toFixed(1)} avg rating
-            </p>
-            <div className="space-y-2">
-              {stats.best_day.all_days.slice(0, 5).map((day, idx) => (
-                <div key={day.day} className="flex items-center gap-3">
-                  <span className="text-xs text-[var(--taupe-dark)] w-12">{day.day.slice(0, 3)}</span>
-                  <div className="flex-1 h-2 bg-[var(--linen)] rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(Number(day.avg_rating) / 5) * 100}%` }}
-                      transition={{ duration: 0.5, delay: 0.4 + idx * 0.05 }}
-                      className={clsx(
-                        "h-full rounded-full",
-                        idx === 0 ? "bg-[var(--terracotta)]" : "bg-[var(--taupe)]"
-                      )}
-                    />
-                  </div>
-                  <span className="text-xs text-[var(--mocha)] w-8">{Number(day.avg_rating).toFixed(1)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Best Time */}
-        {stats.best_time && (
-          <div className="bg-white border border-[var(--taupe)]/20 rounded-2xl p-6">
-            <h3 className="text-xs tracking-[0.2em] uppercase text-[var(--latte)] mb-4">
-              Best Time for Coffee
-            </h3>
-            <p className="font-[family-name:var(--font-serif)] text-3xl text-[var(--coffee)] mb-2 capitalize">
-              {stats.best_time.time}
-            </p>
-            <p className="text-sm text-[var(--mocha)] mb-4">
-              {Number(stats.best_time.avg_rating).toFixed(1)} avg rating
-            </p>
-            <div className="flex gap-3">
-              {stats.best_time.all_times.map((time, idx) => (
-                <div
-                  key={time.time_of_day}
-                  className={clsx(
-                    "flex-1 p-3 rounded-xl text-center transition-colors",
-                    idx === 0
-                      ? "bg-[var(--terracotta)]/10 border border-[var(--terracotta)]/30"
-                      : "bg-[var(--linen)]"
-                  )}
-                >
-                  <p className="text-xs text-[var(--mocha)] capitalize mb-1">{time.time_of_day}</p>
-                  <p className={clsx(
-                    "font-medium",
-                    idx === 0 ? "text-[var(--terracotta)]" : "text-[var(--coffee)]"
-                  )}>
-                    {Number(time.avg_rating).toFixed(1)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </motion.div>
-
-      {/* Loyalty Streaks */}
-      {(stats.current_streak || stats.longest_streak) && (
+      {(stats.best_day || stats.best_time) && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.35 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="grid grid-cols-2 gap-4 mb-8"
         >
-          {stats.current_streak && stats.current_streak.count > 1 && (
-            <div className="bg-gradient-to-br from-[var(--sage)]/10 to-[var(--sage)]/5 border border-[var(--sage)]/30 rounded-2xl p-6">
-              <h3 className="text-xs tracking-[0.2em] uppercase text-[var(--sage-dark)] mb-4">
-                Current Streak
-              </h3>
-              <p className="font-[family-name:var(--font-serif)] text-4xl text-[var(--coffee)] mb-2">
-                {stats.current_streak.count} visits
-              </p>
-              <p className="text-sm text-[var(--mocha)]">
-                in a row at <span className="font-medium">{stats.current_streak.cafe_name}</span>
-              </p>
+          {stats.best_day && (
+            <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4">
+              <p className="text-xs text-[var(--taupe-dark)] mb-1">Best day</p>
+              <p className="font-medium text-[var(--coffee)]">{stats.best_day.day}</p>
+              <p className="text-xs text-[var(--mocha)]">{Number(stats.best_day.avg_rating).toFixed(1)} avg</p>
             </div>
           )}
-
-          {stats.longest_streak && stats.longest_streak.count > 1 && (
-            <div className="bg-white border border-[var(--taupe)]/20 rounded-2xl p-6">
-              <h3 className="text-xs tracking-[0.2em] uppercase text-[var(--latte)] mb-4">
-                Longest Streak
-              </h3>
-              <p className="font-[family-name:var(--font-serif)] text-4xl text-[var(--coffee)] mb-2">
-                {stats.longest_streak.count} visits
-              </p>
-              <p className="text-sm text-[var(--mocha)]">
-                at <span className="font-medium">{stats.longest_streak.cafe_name}</span>
-              </p>
+          {stats.best_time && (
+            <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4">
+              <p className="text-xs text-[var(--taupe-dark)] mb-1">Best time</p>
+              <p className="font-medium text-[var(--coffee)] capitalize">{stats.best_time.time}</p>
+              <p className="text-xs text-[var(--mocha)]">{Number(stats.best_time.avg_rating).toFixed(1)} avg</p>
             </div>
           )}
         </motion.div>
       )}
 
-      {/* Two Column Layout for Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Top Cafes */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <h2 className="font-[family-name:var(--font-serif)] text-2xl text-[var(--coffee)] mb-6">
-            Favorite Haunts
-          </h2>
-          {stats.top_cafes.length === 0 ? (
-            <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-8 text-center">
-              <p className="text-[var(--latte)]">No cafes yet</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {stats.top_cafes.map((cafe, index) => (
-                <motion.div
-                  key={cafe.cafe_name}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                  className="bg-white border border-[var(--taupe)]/20 rounded-xl p-5 flex items-center justify-between group hover:border-[var(--taupe)]/40 hover:shadow-md transition-all duration-300"
-                >
-                  <div className="flex items-center gap-4">
-                    <span className={clsx(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-                      index === 0 ? "bg-[var(--terracotta)] text-white" :
-                      index === 1 ? "bg-[var(--sage)] text-white" :
-                      "bg-[var(--linen)] text-[var(--mocha)]"
-                    )}>
-                      {index + 1}
-                    </span>
-                    <span className="font-medium text-[var(--coffee)]">
-                      {cafe.cafe_name}
-                    </span>
-                  </div>
-                  <span className="text-sm text-[var(--latte)]">
-                    {cafe.visit_count} {Number(cafe.visit_count) === 1 ? 'visit' : 'visits'}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Drink Types */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.45 }}
-        >
-          <h2 className="font-[family-name:var(--font-serif)] text-2xl text-[var(--coffee)] mb-6">
-            Your Orders
-          </h2>
-          {stats.drink_type_breakdown.length === 0 ? (
-            <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-8 text-center">
-              <p className="text-[var(--latte)]">No drinks yet</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {stats.drink_type_breakdown.map((type, index) => {
-                const maxCount = Math.max(...stats.drink_type_breakdown.map(t => Number(t.count)));
-                const percentage = (Number(type.count) / maxCount) * 100;
-
-                return (
-                  <motion.div
-                    key={type.drink_type}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.55 + index * 0.1 }}
-                    className="group"
+      {/* Clear Data */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="pt-8 border-t border-[var(--taupe)]/20 text-center"
+      >
+        <AlertDialog.Root>
+          <AlertDialog.Trigger asChild>
+            <button className="text-xs text-[var(--taupe-dark)] hover:text-red-600 transition-colors">
+              Clear all data
+            </button>
+          </AlertDialog.Trigger>
+          <AlertDialog.Portal>
+            <AlertDialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
+            <AlertDialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl p-6 w-full max-w-xs shadow-xl z-50">
+              <AlertDialog.Title className="font-medium text-[var(--coffee)] mb-2">
+                Delete all data?
+              </AlertDialog.Title>
+              <AlertDialog.Description className="text-sm text-[var(--mocha)] mb-5">
+                This permanently deletes all your entries and cafes.
+              </AlertDialog.Description>
+              <div className="flex gap-2">
+                <AlertDialog.Cancel asChild>
+                  <button className="flex-1 py-2 px-4 rounded-lg border border-[var(--taupe)]/30 text-sm text-[var(--mocha)] hover:bg-[var(--linen)] transition-colors">
+                    Cancel
+                  </button>
+                </AlertDialog.Cancel>
+                <AlertDialog.Action asChild>
+                  <button
+                    onClick={handleDeleteAllData}
+                    disabled={deleting}
+                    className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-sm text-white hover:bg-red-700 transition-colors disabled:opacity-50"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-[var(--coffee)]">
-                        {type.drink_type}
-                      </span>
-                      <span className="text-sm text-[var(--latte)]">
-                        {type.count}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-[var(--linen)] rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${percentage}%` }}
-                        transition={{ duration: 0.8, delay: 0.65 + index * 0.1, ease: "easeOut" }}
-                        className={clsx(
-                          "h-full rounded-full",
-                          index === 0 ? "bg-gradient-to-r from-[var(--terracotta-muted)] to-[var(--terracotta)]" :
-                          index === 1 ? "bg-gradient-to-r from-[var(--sage)] to-[var(--sage-dark)]" :
-                          "bg-[var(--taupe)]"
-                        )}
-                      />
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </motion.div>
-      </div>
-
-      {/* Quote / Mood */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="mt-20 text-center"
-      >
-        <div className="inline-block border-t border-b border-[var(--taupe)]/30 py-8 px-12">
-          <p className="font-[family-name:var(--font-serif)] text-xl italic text-[var(--mocha)]">
-            {stats.total_drinks === 0
-              ? '"The first cup is for the guest, the second for enjoyment."'
-              : Number(stats.average_rating) >= 4
-              ? '"Life is too short for bad coffee."'
-              : '"Every cup is a journey of discovery."'}
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Clear Data Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.9 }}
-        className="mt-16 pt-8 border-t border-[var(--taupe)]/20"
-      >
-        <div className="text-center">
-          <p className="text-sm text-[var(--latte)] mb-4">Need a fresh start?</p>
-          <AlertDialog.Root>
-            <AlertDialog.Trigger asChild>
-              <button className="text-sm text-red-600 hover:text-red-700 transition-colors">
-                Clear all my data
-              </button>
-            </AlertDialog.Trigger>
-            <AlertDialog.Portal>
-              <AlertDialog.Overlay className="fixed inset-0 bg-[var(--espresso)]/40 backdrop-blur-sm z-50" />
-              <AlertDialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl z-50">
-                <AlertDialog.Title className="font-[family-name:var(--font-serif)] text-2xl text-[var(--coffee)] mb-4">
-                  Delete all data?
-                </AlertDialog.Title>
-                <AlertDialog.Description className="text-[var(--mocha)] mb-6">
-                  This will permanently delete all your cafes and drink entries. This action cannot be undone.
-                </AlertDialog.Description>
-                <div className="flex gap-3">
-                  <AlertDialog.Cancel asChild>
-                    <button className="flex-1 py-3 px-4 rounded-lg border border-[var(--taupe)]/40 text-[var(--mocha)] hover:bg-[var(--bone-light)] transition-colors">
-                      Cancel
-                    </button>
-                  </AlertDialog.Cancel>
-                  <AlertDialog.Action asChild>
-                    <button
-                      onClick={handleDeleteAllData}
-                      disabled={deleting}
-                      className="flex-1 py-3 px-4 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
-                    >
-                      {deleting ? 'Deleting...' : 'Delete Everything'}
-                    </button>
-                  </AlertDialog.Action>
-                </div>
-              </AlertDialog.Content>
-            </AlertDialog.Portal>
-          </AlertDialog.Root>
-        </div>
+                    {deleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                </AlertDialog.Action>
+              </div>
+            </AlertDialog.Content>
+          </AlertDialog.Portal>
+        </AlertDialog.Root>
       </motion.div>
     </div>
   );

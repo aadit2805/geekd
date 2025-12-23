@@ -71,6 +71,13 @@ export interface TimeStats {
 export interface Stats {
   total_drinks: number;
   average_rating: number;
+  cafes_visited: number;
+  drink_types_tried: number;
+  current_streak: number;
+  longest_streak: number;
+  drinks_this_week: number;
+  drinks_this_month: number;
+  milestones: { type: string; value: number; label: string }[];
   top_cafes: { cafe_name: string; visit_count: number }[];
   drink_type_breakdown: { drink_type: string; count: number }[];
   rating_trends: RatingTrend[];
@@ -85,11 +92,11 @@ export interface Stats {
     avg_rating: string;
     all_times: TimeStats[];
   } | null;
-  current_streak: {
+  cafe_streak: {
     cafe_name: string;
     count: number;
   } | null;
-  longest_streak: {
+  longest_cafe_streak: {
     cafe_name: string;
     count: number;
   } | null;
