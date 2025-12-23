@@ -4,7 +4,20 @@ import { useState, useEffect } from 'react';
 import { getStats, deleteAllUserData, type Stats } from '@/lib/api';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
-import * as AlertDialog from '@radix-ui/react-alert-dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function StatsPage() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -75,22 +88,30 @@ export default function StatsPage() {
         animate={{ opacity: 1 }}
         className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
       >
-        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 text-center">
-          <p className="text-2xl font-medium text-[var(--coffee)]">{stats.total_drinks}</p>
-          <p className="text-xs text-[var(--taupe-dark)]">cups</p>
-        </div>
-        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 text-center">
-          <p className="text-2xl font-medium text-[var(--coffee)]">{stats.cafes_visited}</p>
-          <p className="text-xs text-[var(--taupe-dark)]">cafes</p>
-        </div>
-        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 text-center">
-          <p className="text-2xl font-medium text-[var(--coffee)]">{Number(stats.average_rating).toFixed(1)}</p>
-          <p className="text-xs text-[var(--taupe-dark)]">avg rating</p>
-        </div>
-        <div className="bg-white border border-[var(--taupe)]/20 rounded-xl p-4 text-center">
-          <p className="text-2xl font-medium text-[var(--coffee)]">{stats.longest_streak}</p>
-          <p className="text-xs text-[var(--taupe-dark)]">best streak</p>
-        </div>
+        <Card className="border-[var(--taupe)]/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-medium text-[var(--coffee)]">{stats.total_drinks}</p>
+            <p className="text-xs text-[var(--taupe-dark)]">cups</p>
+          </CardContent>
+        </Card>
+        <Card className="border-[var(--taupe)]/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-medium text-[var(--coffee)]">{stats.cafes_visited}</p>
+            <p className="text-xs text-[var(--taupe-dark)]">cafes</p>
+          </CardContent>
+        </Card>
+        <Card className="border-[var(--taupe)]/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-medium text-[var(--coffee)]">{Number(stats.average_rating).toFixed(1)}</p>
+            <p className="text-xs text-[var(--taupe-dark)]">avg rating</p>
+          </CardContent>
+        </Card>
+        <Card className="border-[var(--taupe)]/20">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-medium text-[var(--coffee)]">{stats.longest_streak}</p>
+            <p className="text-xs text-[var(--taupe-dark)]">best streak</p>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Milestones */}
@@ -104,12 +125,13 @@ export default function StatsPage() {
           <h2 className="text-xs font-medium text-[var(--taupe-dark)] mb-3">Milestones</h2>
           <div className="flex flex-wrap gap-2">
             {stats.milestones.map((m) => (
-              <span
+              <Badge
                 key={m.label}
-                className="px-3 py-1.5 text-sm bg-[var(--linen)] text-[var(--mocha)] rounded-full"
+                variant="secondary"
+                className="bg-[var(--linen)] text-[var(--mocha)]"
               >
                 {m.label}
-              </span>
+              </Badge>
             ))}
           </div>
         </motion.div>
@@ -229,40 +251,33 @@ export default function StatsPage() {
         transition={{ delay: 0.4 }}
         className="pt-8 border-t border-[var(--taupe)]/20 text-center"
       >
-        <AlertDialog.Root>
-          <AlertDialog.Trigger asChild>
-            <button className="text-xs text-[var(--taupe-dark)] hover:text-red-600 transition-colors">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" className="text-xs text-[var(--taupe-dark)] hover:text-red-600 h-auto py-1">
               Clear all data
-            </button>
-          </AlertDialog.Trigger>
-          <AlertDialog.Portal>
-            <AlertDialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-            <AlertDialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl p-6 w-full max-w-xs shadow-xl z-50">
-              <AlertDialog.Title className="font-medium text-[var(--coffee)] mb-2">
-                Delete all data?
-              </AlertDialog.Title>
-              <AlertDialog.Description className="text-sm text-[var(--mocha)] mb-5">
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-white max-w-xs">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-[var(--coffee)]">Delete all data?</AlertDialogTitle>
+              <AlertDialogDescription className="text-[var(--mocha)]">
                 This permanently deletes all your entries and cafes.
-              </AlertDialog.Description>
-              <div className="flex gap-2">
-                <AlertDialog.Cancel asChild>
-                  <button className="flex-1 py-2 px-4 rounded-lg border border-[var(--taupe)]/30 text-sm text-[var(--mocha)] hover:bg-[var(--linen)] transition-colors">
-                    Cancel
-                  </button>
-                </AlertDialog.Cancel>
-                <AlertDialog.Action asChild>
-                  <button
-                    onClick={handleDeleteAllData}
-                    disabled={deleting}
-                    className="flex-1 py-2 px-4 rounded-lg bg-red-600 text-sm text-white hover:bg-red-700 transition-colors disabled:opacity-50"
-                  >
-                    {deleting ? 'Deleting...' : 'Delete'}
-                  </button>
-                </AlertDialog.Action>
-              </div>
-            </AlertDialog.Content>
-          </AlertDialog.Portal>
-        </AlertDialog.Root>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-[var(--taupe)]/30 text-[var(--mocha)] hover:bg-[var(--linen)]">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAllData}
+                disabled={deleting}
+                className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </motion.div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useAuth } from '@clerk/nextjs';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function LandingPage() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -26,26 +27,17 @@ export default function LandingPage() {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {isLoaded && isSignedIn ? (
-            <Link
-              href="/journal"
-              className="px-8 py-4 bg-[var(--coffee)] text-[var(--card)] rounded-lg font-medium tracking-wide hover:bg-[var(--espresso)] transition-colors"
-            >
-              Start Logging
-            </Link>
+            <Button asChild size="lg" className="bg-[var(--coffee)] hover:bg-[var(--espresso)] text-white">
+              <Link href="/journal">Start Logging</Link>
+            </Button>
           ) : (
             <>
-              <Link
-                href="/sign-up"
-                className="px-8 py-4 bg-[var(--coffee)] text-[var(--card)] rounded-lg font-medium tracking-wide hover:bg-[var(--espresso)] transition-colors"
-              >
-                Get Started
-              </Link>
-              <Link
-                href="/sign-in"
-                className="px-8 py-4 border border-[var(--taupe)] text-[var(--coffee)] rounded-lg font-medium tracking-wide hover:bg-[var(--linen)] transition-colors"
-              >
-                Sign In
-              </Link>
+              <Button asChild size="lg" className="bg-[var(--coffee)] hover:bg-[var(--espresso)] text-white">
+                <Link href="/sign-up">Get Started</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="border-[var(--taupe)] text-[var(--coffee)] hover:bg-[var(--linen)]">
+                <Link href="/sign-in">Sign In</Link>
+              </Button>
             </>
           )}
         </div>

@@ -3,7 +3,19 @@
 import { useState, useEffect } from 'react';
 import { getDrinks, getCafes, deleteDrink, type Drink, type Cafe } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as AlertDialog from '@radix-ui/react-alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { clsx } from 'clsx';
 
 export default function HistoryPage() {
@@ -78,30 +90,32 @@ export default function HistoryPage() {
     <div className="max-w-2xl mx-auto">
       {/* Filters */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-2 px-2">
-        <button
-          onClick={() => setFilterCafeId('all')}
+        <Badge
+          variant={filterCafeId === 'all' ? 'default' : 'outline'}
           className={clsx(
-            "px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors",
+            "cursor-pointer whitespace-nowrap",
             filterCafeId === 'all'
-              ? "bg-[var(--coffee)] text-white"
-              : "bg-white border border-[var(--taupe)]/30 text-[var(--mocha)] hover:border-[var(--coffee)]/30"
+              ? "bg-[var(--coffee)] hover:bg-[var(--espresso)]"
+              : "hover:border-[var(--coffee)]/30"
           )}
+          onClick={() => setFilterCafeId('all')}
         >
           All
-        </button>
+        </Badge>
         {cafes.slice(0, 5).map((cafe) => (
-          <button
+          <Badge
             key={cafe.id}
-            onClick={() => setFilterCafeId(String(cafe.id))}
+            variant={filterCafeId === String(cafe.id) ? 'default' : 'outline'}
             className={clsx(
-              "px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors",
+              "cursor-pointer whitespace-nowrap",
               filterCafeId === String(cafe.id)
-                ? "bg-[var(--coffee)] text-white"
-                : "bg-white border border-[var(--taupe)]/30 text-[var(--mocha)] hover:border-[var(--coffee)]/30"
+                ? "bg-[var(--coffee)] hover:bg-[var(--espresso)]"
+                : "hover:border-[var(--coffee)]/30"
             )}
+            onClick={() => setFilterCafeId(String(cafe.id))}
           >
             {cafe.name}
-          </button>
+          </Badge>
         ))}
       </div>
 
@@ -149,12 +163,14 @@ export default function HistoryPage() {
                         </div>
 
                         {/* Delete */}
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setDeleteId(drink.id)}
-                          className="text-xs text-[var(--taupe-dark)] hover:text-[var(--terracotta)] opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-xs text-[var(--taupe-dark)] hover:text-[var(--terracotta)] opacity-0 group-hover:opacity-100 transition-opacity h-auto py-1"
                         >
                           Remove
-                        </button>
+                        </Button>
                       </div>
                     </motion.div>
                   ))}
@@ -166,34 +182,27 @@ export default function HistoryPage() {
       )}
 
       {/* Delete Confirmation */}
-      <AlertDialog.Root open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-          <AlertDialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl p-6 w-full max-w-xs shadow-xl z-50">
-            <AlertDialog.Title className="font-medium text-[var(--coffee)] mb-2">
-              Remove entry?
-            </AlertDialog.Title>
-            <AlertDialog.Description className="text-sm text-[var(--mocha)] mb-5">
+      <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent className="bg-white max-w-xs">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-[var(--coffee)]">Remove entry?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[var(--mocha)]">
               This can't be undone.
-            </AlertDialog.Description>
-            <div className="flex gap-2">
-              <AlertDialog.Cancel asChild>
-                <button className="flex-1 py-2 px-4 rounded-lg border border-[var(--taupe)]/30 text-sm text-[var(--mocha)] hover:bg-[var(--linen)] transition-colors">
-                  Cancel
-                </button>
-              </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 py-2 px-4 rounded-lg bg-[var(--terracotta)] text-sm text-white hover:brightness-90 transition-all"
-                >
-                  Remove
-                </button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
-      </AlertDialog.Root>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[var(--taupe)]/30 text-[var(--mocha)] hover:bg-[var(--linen)]">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-[var(--terracotta)] hover:bg-[var(--terracotta)]/90 text-white"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

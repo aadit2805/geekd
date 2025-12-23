@@ -5,6 +5,8 @@ import { getCafes, type Cafe } from '@/lib/api';
 import { GoogleMap, useLoadScript, Marker, InfoWindow } from '@react-google-maps/api';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 const libraries: ("places")[] = ['places'];
 
@@ -126,18 +128,15 @@ export default function MapPage() {
         className="mb-8"
       >
         {cafesWithLocation.length === 0 ? (
-          <div className="bg-white border border-[var(--taupe)]/20 rounded-2xl p-12 text-center">
+          <Card className="border-[var(--taupe)]/20 p-12 text-center">
             <p className="text-[var(--mocha)] mb-4">No cafes with location data yet</p>
             <p className="text-sm text-[var(--latte)]">
               Add cafes using the search feature to see them on the map
             </p>
-            <Link
-              href="/"
-              className="inline-block mt-6 px-6 py-3 bg-[var(--coffee)] text-white rounded-lg hover:bg-[var(--espresso)] transition-colors"
-            >
-              Log a Coffee
-            </Link>
-          </div>
+            <Button asChild className="mt-6 bg-[var(--coffee)] hover:bg-[var(--espresso)]">
+              <Link href="/">Log a Coffee</Link>
+            </Button>
+          </Card>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-[var(--taupe)]/20 shadow-lg">
             <GoogleMap
