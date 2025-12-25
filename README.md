@@ -22,7 +22,8 @@ A personal coffee logging app to track your coffee experiences, discover pattern
 ### 1. Clone and Install
 
 ```bash
-git clone <your-repo-url>
+SSH: git clone git@github.com:aadit2805/geekd.git
+HTTPS: git clone https://github.com/aadit2805/geekd.git
 cd geekd
 
 # Install frontend dependencies
@@ -129,15 +130,3 @@ geekd/
 │
 └── README.md
 ```
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/cafes` | List cafes |
-| POST | `/api/cafes` | Create cafe |
-| GET | `/api/drinks` | List drinks |
-| POST | `/api/drinks` | Log drink |
-| DELETE | `/api/drinks/:id` | Delete drink |
-| GET | `/api/stats` | Get stats & streaks |
-| DELETE | `/api/user/data` | Clear all data |
