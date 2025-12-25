@@ -22,8 +22,7 @@ A personal coffee logging app to track your coffee experiences, discover pattern
 ### 1. Clone and Install
 
 ```bash
-SSH: git clone git@github.com:aadit2805/geekd.git
-HTTPS: git clone https://github.com/aadit2805/geekd.git
+git clone git@github.com:aadit2805/geekd.git
 cd geekd
 
 # Install frontend dependencies
