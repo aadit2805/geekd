@@ -102,6 +102,13 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Helper function to sanitize text input (prevent XSS)
+const sanitizeText = (text: string | null | undefined): string | null => {
+  if (!text) return null;
+  // Remove any HTML tags and limit length
+  return text.replace(/<[^>]*>/g, '').substring(0, 1000);
+};
+
 // POST create drink
 router.post('/', async (req, res) => {
   try {
@@ -133,7 +140,7 @@ router.post('/', async (req, res) => {
     const result = await pool.query(
       `INSERT INTO drinks (cafe_id, drink_type, rating, notes, logged_at, user_id)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [cafe_id, drink_type, rating, notes || null, logged_at || new Date(), userId]
+      [cafe_id, sanitizeText(drink_type), rating, sanitizeText(notes), logged_at || new Date(), userId]
     );
 
     res.status(201).json(result.rows[0]);

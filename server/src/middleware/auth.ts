@@ -64,7 +64,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     }
 
     // If CLERK_SECRET_KEY is set, verify the token properly
-    // Otherwise, for development, just decode and extract the user ID
+    // IMPORTANT: Both CLERK_SECRET_KEY and CLERK_JWKS_URL MUST be set in production
     if (process.env.CLERK_SECRET_KEY && process.env.CLERK_JWKS_URL) {
       try {
         const signingKey = await getSigningKey(decoded.header);

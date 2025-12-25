@@ -3,6 +3,13 @@ import { pool } from '../db';
 
 const router = Router();
 
+// Helper function to sanitize text input (prevent XSS)
+const sanitizeText = (text: string | null | undefined): string | null => {
+  if (!text) return null;
+  // Remove any HTML tags and limit length
+  return text.replace(/<[^>]*>/g, '').substring(0, 500);
+};
+
 // GET all cafes (sorted by most recently visited, then by name)
 router.get('/', async (req, res) => {
   try {
@@ -71,7 +78,16 @@ router.post('/', async (req, res) => {
     const result = await pool.query(
       `INSERT INTO cafes (name, address, city, place_id, photo_reference, lat, lng, user_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [name, address || null, city || null, place_id || null, photo_reference || null, lat || null, lng || null, userId]
+      [
+        sanitizeText(name),
+        sanitizeText(address),
+        sanitizeText(city),
+        place_id || null,
+        photo_reference || null,
+        lat || null,
+        lng || null,
+        userId
+      ]
     );
 
     res.status(201).json(result.rows[0]);
