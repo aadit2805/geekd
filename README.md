@@ -1,4 +1,4 @@
-# Geekd
+# Espress
 
 A personal coffee logging app to track your coffee experiences, discover patterns, and build streaks.
 
@@ -23,7 +23,7 @@ A personal coffee logging app to track your coffee experiences, discover pattern
 
 ```bash
 git clone <your-repo-url>
-cd geekd
+cd espress
 
 # Install frontend dependencies
 cd client
@@ -40,19 +40,19 @@ npm install
 ```bash
 brew install postgresql
 brew services start postgresql
-createdb geekd
+createdb espress
 ```
 
 **Option B: Docker**
 ```bash
-docker run --name geekd-db -e POSTGRES_DB=geekd -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:15
+docker run --name espress-db -e POSTGRES_DB=espress -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:15
 ```
 
 ### 3. Run Migrations
 
 ```bash
 cd server
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/geekd"
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/espress"
 for file in migrations/*.sql; do psql $DATABASE_URL -f "$file"; done
 ```
 
@@ -60,7 +60,7 @@ for file in migrations/*.sql; do psql $DATABASE_URL -f "$file"; done
 
 **server/.env**
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/geekd
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/espress
 CLERK_SECRET_KEY=sk_test_xxxxx
 PORT=3001
 ```
