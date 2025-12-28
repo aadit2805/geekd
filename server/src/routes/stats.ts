@@ -219,6 +219,49 @@ router.get('/', async (req, res) => {
 
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+    // Price statistics
+    const priceStatsResult = await pool.query(`
+      SELECT
+        COALESCE(SUM(price), 0) as total_spent,
+        COALESCE(AVG(price), 0) as avg_price,
+        COUNT(price) as drinks_with_price
+      FROM drinks
+      WHERE user_id = $1 AND price IS NOT NULL
+    `, [userId]);
+
+    const totalSpent = parseFloat(priceStatsResult.rows[0].total_spent) || 0;
+    const avgPrice = parseFloat(priceStatsResult.rows[0].avg_price) || 0;
+    const drinksWithPrice = parseInt(priceStatsResult.rows[0].drinks_with_price) || 0;
+
+    // This month's spending
+    const monthSpendResult = await pool.query(`
+      SELECT COALESCE(SUM(price), 0) as total
+      FROM drinks
+      WHERE user_id = $1 AND price IS NOT NULL AND logged_at >= DATE_TRUNC('month', CURRENT_DATE)
+    `, [userId]);
+    const spentThisMonth = parseFloat(monthSpendResult.rows[0].total) || 0;
+
+    // Price by cafe (avg)
+    const priceByCafeResult = await pool.query(`
+      SELECT c.name as cafe_name, ROUND(AVG(d.price)::numeric, 2) as avg_price, COUNT(*) as count
+      FROM drinks d
+      JOIN cafes c ON d.cafe_id = c.id
+      WHERE d.user_id = $1 AND d.price IS NOT NULL
+      GROUP BY c.id, c.name
+      HAVING COUNT(*) >= 2
+      ORDER BY avg_price DESC
+    `, [userId]);
+
+    // Flavor tag breakdown
+    const flavorTagsResult = await pool.query(`
+      SELECT unnest(flavor_tags) as tag, COUNT(*) as count
+      FROM drinks
+      WHERE user_id = $1 AND flavor_tags IS NOT NULL
+      GROUP BY tag
+      ORDER BY count DESC
+      LIMIT 10
+    `, [userId]);
+
     // Calculate milestones
     const milestones = [];
     if (total_drinks >= 1) milestones.push({ type: 'drinks', value: 1, label: 'First Cup' });
@@ -270,6 +313,14 @@ router.get('/', async (req, res) => {
         cafe_name: longestStreakResult.rows[0].cafe_name,
         count: parseInt(longestStreakResult.rows[0].streak_count)
       } : null,
+      // Price stats
+      total_spent: Math.round(totalSpent * 100) / 100,
+      avg_price: Math.round(avgPrice * 100) / 100,
+      spent_this_month: Math.round(spentThisMonth * 100) / 100,
+      drinks_with_price: drinksWithPrice,
+      price_by_cafe: priceByCafeResult.rows,
+      // Flavor tags
+      top_flavor_tags: flavorTagsResult.rows,
     });
   } catch (error) {
     console.error('Error fetching stats:', error);

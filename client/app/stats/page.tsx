@@ -154,6 +154,72 @@ export default function StatsPage() {
         </div>
       </motion.div>
 
+      {/* Spending Stats */}
+      {stats.drinks_with_price > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.17 }}
+          className="mb-8"
+        >
+          <h2 className="text-xs font-medium text-taupe-dark mb-3">Spending</h2>
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <div className="bg-white border border-(--taupe)/20 rounded-xl p-4 text-center">
+              <p className="text-xl font-medium text-coffee">${stats.spent_this_month.toFixed(0)}</p>
+              <p className="text-xs text-taupe-dark">this month</p>
+            </div>
+            <div className="bg-white border border-(--taupe)/20 rounded-xl p-4 text-center">
+              <p className="text-xl font-medium text-coffee">${stats.total_spent.toFixed(0)}</p>
+              <p className="text-xs text-taupe-dark">total</p>
+            </div>
+            <div className="bg-white border border-(--taupe)/20 rounded-xl p-4 text-center">
+              <p className="text-xl font-medium text-coffee">${stats.avg_price.toFixed(2)}</p>
+              <p className="text-xs text-taupe-dark">avg/cup</p>
+            </div>
+          </div>
+          {stats.price_by_cafe.length > 0 && (
+            <div className="bg-white border border-(--taupe)/20 rounded-xl p-4">
+              <p className="text-xs text-taupe-dark mb-2">Price by cafe</p>
+              <div className="space-y-2">
+                {stats.price_by_cafe.slice(0, 3).map((cafe, i) => (
+                  <div key={cafe.cafe_name} className="flex justify-between text-sm">
+                    <span className="text-coffee truncate">{cafe.cafe_name}</span>
+                    <span className="text-taupe-dark">${Number(cafe.avg_price).toFixed(2)}/cup</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Flavor Profile */}
+      {stats.top_flavor_tags.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.18 }}
+          className="mb-8"
+        >
+          <h2 className="text-xs font-medium text-taupe-dark mb-3">Your Flavor Profile</h2>
+          <div className="bg-white border border-(--taupe)/20 rounded-xl p-4">
+            <div className="flex flex-wrap gap-2">
+              {stats.top_flavor_tags.map((tag, i) => (
+                <span
+                  key={tag.tag}
+                  className={clsx(
+                    "px-3 py-1.5 rounded-full text-sm",
+                    i === 0 ? "bg-terracotta text-white" : "bg-linen text-mocha"
+                  )}
+                >
+                  {tag.tag} <span className="opacity-60">({tag.count})</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Top Cafes */}
       {stats.top_cafes.length > 0 && (
         <motion.div

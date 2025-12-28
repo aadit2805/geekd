@@ -7,6 +7,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as Select from '@radix-ui/react-select';
 import { clsx } from 'clsx';
 import { PlacesAutocomplete, type PlaceResult } from '@/components/PlacesAutocomplete';
+import { DollarSign } from 'lucide-react';
+
+const FLAVOR_TAGS = [
+  'Fruity', 'Nutty', 'Chocolatey', 'Caramel', 'Floral',
+  'Bright', 'Smooth', 'Bold', 'Bitter', 'Sweet',
+  'Earthy', 'Spicy', 'Citrus', 'Berry', 'Creamy'
+];
 
 export default function LogPage() {
   const router = useRouter();
@@ -23,6 +30,8 @@ export default function LogPage() {
   const [drinkType, setDrinkType] = useState('');
   const [rating, setRating] = useState<number>(4);
   const [notes, setNotes] = useState('');
+  const [price, setPrice] = useState<string>('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // New cafe form
   const [newCafeName, setNewCafeName] = useState('');
@@ -63,6 +72,14 @@ export default function LogPage() {
     if (!lastDrink) return;
     setSelectedCafeId(String(lastDrink.cafe_id));
     setDrinkType(lastDrink.drink_type);
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
   };
 
   const handlePlaceSelect = async (place: PlaceResult) => {
@@ -131,6 +148,8 @@ export default function LogPage() {
         drink_type: drinkType,
         rating,
         notes: notes || undefined,
+        price: price ? parseFloat(price) : undefined,
+        flavor_tags: selectedTags.length > 0 ? selectedTags : undefined,
       });
       router.push('/history');
     } catch (error) {
@@ -345,6 +364,50 @@ export default function LogPage() {
           <div className="flex justify-between mt-1.5 text-[10px] text-taupe-dark px-1">
             <span>Skip it</span>
             <span>Perfect</span>
+          </div>
+        </div>
+
+        {/* Price */}
+        <div>
+          <label className="block text-xs font-medium text-mocha mb-2">
+            Price <span className="text-taupe-dark font-normal">(optional)</span>
+          </label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-taupe-dark" />
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0.00"
+              className="w-full pl-9 pr-4 py-3 bg-white border border-(--taupe)/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-(--coffee)/20"
+            />
+          </div>
+        </div>
+
+        {/* Flavor Tags */}
+        <div>
+          <label className="block text-xs font-medium text-mocha mb-2">
+            Flavor Profile <span className="text-taupe-dark font-normal">(optional)</span>
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {FLAVOR_TAGS.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => toggleTag(tag)}
+                className={clsx(
+                  "px-3 py-1.5 text-xs rounded-full transition-all",
+                  selectedTags.includes(tag)
+                    ? "bg-coffee text-white"
+                    : "bg-linen text-mocha hover:bg-(--taupe)/20"
+                )}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
 

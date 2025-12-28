@@ -103,16 +103,31 @@ router.get('/:id', async (req, res) => {
 });
 
 // Helper function to sanitize text input (prevent XSS)
-const sanitizeText = (text: string | null | undefined): string | null => {
+const sanitizeText = (text: string | null | undefined, maxLength = 1000): string | null => {
   if (!text) return null;
   // Remove any HTML tags and limit length
-  return text.replace(/<[^>]*>/g, '').substring(0, 1000);
+  return text.replace(/<[^>]*>/g, '').substring(0, maxLength);
+};
+
+// Validate base64 image data URL
+const sanitizeImageUrl = (url: string | null | undefined): string | null => {
+  if (!url || typeof url !== 'string') return null;
+  // Only allow data URLs with image types
+  const trimmed = url.trim();
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+  // Also allow regular URLs for external images
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed.substring(0, 2000); // Limit URL length
+  }
+  return null;
 };
 
 // POST create drink
 router.post('/', async (req, res) => {
   try {
-    const { cafe_id, drink_type, rating, notes, logged_at } = req.body;
+    const { cafe_id, drink_type, rating, notes, logged_at, price, flavor_tags, photo_url } = req.body;
     const userId = req.userId;
 
     // Validation
@@ -128,6 +143,19 @@ router.post('/', async (req, res) => {
       });
     }
 
+    if (price !== undefined && (price < 0 || price > 100)) {
+      return res.status(400).json({
+        error: 'Price must be between 0 and 100'
+      });
+    }
+
+    // Validate flavor_tags is an array of strings
+    if (flavor_tags && (!Array.isArray(flavor_tags) || !flavor_tags.every(t => typeof t === 'string'))) {
+      return res.status(400).json({
+        error: 'flavor_tags must be an array of strings'
+      });
+    }
+
     // Verify cafe belongs to user
     const cafeCheck = await pool.query(
       'SELECT id FROM cafes WHERE id = $1 AND user_id = $2',
@@ -138,9 +166,19 @@ router.post('/', async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO drinks (cafe_id, drink_type, rating, notes, logged_at, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [cafe_id, sanitizeText(drink_type), rating, sanitizeText(notes), logged_at || new Date(), userId]
+      `INSERT INTO drinks (cafe_id, drink_type, rating, notes, logged_at, user_id, price, flavor_tags, photo_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [
+        cafe_id,
+        sanitizeText(drink_type),
+        rating,
+        sanitizeText(notes),
+        logged_at || new Date(),
+        userId,
+        price || null,
+        flavor_tags || null,
+        sanitizeImageUrl(photo_url)
+      ]
     );
 
     res.status(201).json(result.rows[0]);
