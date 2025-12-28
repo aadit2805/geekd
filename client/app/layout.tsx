@@ -18,7 +18,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Espress - Your Coffee Journal',
+  title: 'Espress',
   description: 'A thoughtful space to log and savor your coffee moments',
 };
 
@@ -55,6 +55,7 @@ export default function RootLayout({
                     <NavLink href="/history">Archive</NavLink>
                     <NavLink href="/stats">Insights</NavLink>
                     <NavLink href="/map">Map</NavLink>
+                    <NavLink href="/wishlist">Wishlist</NavLink>
                   </SignedIn>
 
                   {/* Auth */}

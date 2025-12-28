@@ -48,6 +48,22 @@ export interface Drink {
   cafe_name?: string;
   cafe_address?: string | null;
   cafe_city?: string | null;
+  price?: number | null;
+  flavor_tags?: string[] | null;
+  photo_url?: string | null;
+}
+
+export interface WishlistItem {
+  id: number;
+  name: string;
+  address: string | null;
+  city: string | null;
+  place_id: string | null;
+  photo_reference: string | null;
+  lat: number | null;
+  lng: number | null;
+  notes: string | null;
+  created_at: string;
 }
 
 export interface RatingTrend {
@@ -100,6 +116,14 @@ export interface Stats {
     cafe_name: string;
     count: number;
   } | null;
+  // Price stats
+  total_spent: number;
+  avg_price: number;
+  spent_this_month: number;
+  drinks_with_price: number;
+  price_by_cafe: { cafe_name: string; avg_price: string; count: number }[];
+  // Flavor tags
+  top_flavor_tags: { tag: string; count: number }[];
 }
 
 // Cafes
@@ -169,6 +193,9 @@ export const createDrink = async (data: {
   rating: number;
   notes?: string;
   logged_at?: string;
+  price?: number;
+  flavor_tags?: string[];
+  photo_url?: string;
 }): Promise<Drink> => {
   const res = await fetchWithAuth(`${API_URL}/api/drinks`, {
     method: 'POST',
@@ -198,4 +225,47 @@ export const deleteAllUserData = async (): Promise<void> => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete user data');
+};
+
+// Wishlist
+export const getWishlist = async (): Promise<WishlistItem[]> => {
+  const res = await fetchWithAuth(`${API_URL}/api/wishlist`);
+  if (!res.ok) throw new Error('Failed to fetch wishlist');
+  return res.json();
+};
+
+export const addToWishlist = async (data: {
+  name: string;
+  address?: string;
+  city?: string;
+  place_id?: string;
+  photo_reference?: string;
+  lat?: number;
+  lng?: number;
+  notes?: string;
+}): Promise<WishlistItem> => {
+  const res = await fetchWithAuth(`${API_URL}/api/wishlist`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || 'Failed to add to wishlist');
+  }
+  return res.json();
+};
+
+export const removeFromWishlist = async (id: number): Promise<void> => {
+  const res = await fetchWithAuth(`${API_URL}/api/wishlist/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to remove from wishlist');
+};
+
+export const convertWishlistToCafe = async (id: number): Promise<Cafe> => {
+  const res = await fetchWithAuth(`${API_URL}/api/wishlist/${id}/visit`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Failed to convert wishlist item');
+  return res.json();
 };
