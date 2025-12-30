@@ -8,6 +8,7 @@ import drinksRouter from './routes/drinks';
 import statsRouter from './routes/stats';
 import userRouter from './routes/user';
 import wishlistRouter from './routes/wishlist';
+import aiRouter from './routes/ai';
 import { requireAuth } from './middleware/auth';
 import './db'; // Initialize DB connection
 
@@ -34,6 +35,15 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.'
 });
 
+// Stricter rate limit for AI endpoints (cost control)
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // limit AI calls to 30 per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many AI requests, please try again later.'
+});
+
 app.use(express.json({ limit: '10mb' }));
 
 // Public routes
@@ -47,6 +57,7 @@ app.use('/api/drinks', limiter, requireAuth, drinksRouter);
 app.use('/api/stats', limiter, requireAuth, statsRouter);
 app.use('/api/user', limiter, requireAuth, userRouter);
 app.use('/api/wishlist', limiter, requireAuth, wishlistRouter);
+app.use('/api/ai', aiLimiter, requireAuth, aiRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
