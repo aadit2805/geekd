@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { getCafes, createCafe, createDrink, getDrinkTypes, getLastDrink, type Cafe, type Drink } from '@/lib/api';
+import { getCafes, createCafe, createDrink, getDrinkTypes, getLastDrink, getRecommendations, type Cafe, type Drink, type ParsedDrinkInput, type FlavorRecommendation } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Select from '@radix-ui/react-select';
 import { clsx } from 'clsx';
 import { PlacesAutocomplete, type PlaceResult } from '@/components/PlacesAutocomplete';
-import { DollarSign } from 'lucide-react';
+import { NaturalLanguageInput } from '@/components/NaturalLanguageInput';
+import { DollarSign, Lightbulb, RefreshCw } from 'lucide-react';
 
 const FLAVOR_TAGS = [
   'Fruity', 'Nutty', 'Chocolatey', 'Caramel', 'Floral',
@@ -38,6 +39,11 @@ export default function LogPage() {
   const [newCafeAddress, setNewCafeAddress] = useState('');
   const [newCafeCity, setNewCafeCity] = useState('');
   const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null);
+  const [placesSearchQuery, setPlacesSearchQuery] = useState<string>('');
+
+  // AI Recommendations
+  const [recommendation, setRecommendation] = useState<FlavorRecommendation | null>(null);
+  const [loadingRec, setLoadingRec] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -63,8 +69,47 @@ export default function LogPage() {
       setCafes(cafesData);
       setDrinkTypes(typesData);
       setLastDrink(lastData);
+      loadRecommendations();
     } catch (error) {
       console.error('Error loading data:', error);
+    }
+  };
+
+  const loadRecommendations = async () => {
+    setLoadingRec(true);
+    try {
+      const response = await getRecommendations();
+      if (response.success && response.recommendation) {
+        setRecommendation(response.recommendation);
+      }
+    } catch (error) {
+      console.error('Error loading recommendations:', error);
+    } finally {
+      setLoadingRec(false);
+    }
+  };
+
+  const handleAIParsed = (data: ParsedDrinkInput, needsNewCafe: boolean) => {
+    // Set drink details
+    if (data.drink_type) setDrinkType(data.drink_type);
+    if (data.rating) setRating(data.rating);
+    if (data.price) setPrice(String(data.price));
+    if (data.flavor_tags.length > 0) setSelectedTags(data.flavor_tags);
+    if (data.notes) setNotes(data.notes);
+
+    // Handle cafe
+    if (data.cafe_id) {
+      setSelectedCafeId(String(data.cafe_id));
+    } else if (data.cafe_name && needsNewCafe) {
+      // Open new cafe form with search query pre-filled
+      setShowNewCafe(true);
+      setNewCafeName(data.cafe_name);
+      // Set the places search query to pre-populate and trigger autocomplete
+      if (data.places_search_query) {
+        setPlacesSearchQuery(data.places_search_query);
+      } else {
+        setPlacesSearchQuery(data.cafe_name);
+      }
     }
   };
 
@@ -101,6 +146,7 @@ export default function LogPage() {
       setNewCafeName('');
       setNewCafeAddress('');
       setNewCafeCity('');
+      setPlacesSearchQuery('');
     } catch (error) {
       console.error('Error creating cafe:', error);
       // Fall back to manual entry if auto-create fails
@@ -108,6 +154,7 @@ export default function LogPage() {
       setNewCafeName(place.name);
       setNewCafeAddress(place.address);
       setNewCafeCity(place.city);
+      setPlacesSearchQuery('');
     }
   };
 
@@ -129,6 +176,7 @@ export default function LogPage() {
       setNewCafeAddress('');
       setNewCafeCity('');
       setSelectedPlace(null);
+      setPlacesSearchQuery('');
       setShowNewCafe(false);
       setCafes(prev => [newCafe, ...prev]);
       setSelectedCafeId(String(newCafe.id));
@@ -165,6 +213,57 @@ export default function LogPage() {
 
   return (
     <div className="max-w-md mx-auto">
+      {/* AI Quick Add */}
+      <NaturalLanguageInput onParsed={handleAIParsed} existingCafes={cafes} />
+
+      {/* AI Recommendation */}
+      {recommendation && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/50 rounded-xl"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-white rounded-lg mt-0.5">
+                <Lightbulb className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-coffee font-medium mb-1">Try something new</p>
+                <p className="text-sm text-mocha">{recommendation.suggestion}</p>
+                {recommendation.recommended_tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {recommendation.recommended_tags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          if (!selectedTags.includes(tag)) {
+                            setSelectedTags(prev => [...prev, tag]);
+                          }
+                        }}
+                        className="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full hover:bg-amber-200 transition-colors"
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={loadRecommendations}
+              disabled={loadingRec}
+              className="p-1.5 text-taupe-dark hover:text-coffee transition-colors"
+              title="Get new suggestion"
+            >
+              <RefreshCw className={clsx("w-4 h-4", loadingRec && "animate-spin")} />
+            </button>
+          </div>
+        </motion.div>
+      )}
+
       {/* Quick Log */}
       {lastDrink && (
         <motion.button
@@ -250,7 +349,7 @@ export default function LogPage() {
                 className="overflow-hidden"
               >
                 <div className="mt-3 p-4 bg-white border border-(--taupe)/20 rounded-lg space-y-3">
-                  <PlacesAutocomplete onPlaceSelect={handlePlaceSelect} placeholder="Search places..." />
+                  <PlacesAutocomplete onPlaceSelect={handlePlaceSelect} placeholder="Search places..." initialValue={placesSearchQuery} />
 
                   {selectedPlace && (
                     <div className="p-3 bg-linen rounded-lg">
