@@ -32,7 +32,7 @@ const parseDrinkTool: Anthropic.Tool = {
       },
       cafe_name: {
         type: 'string',
-        description: 'The name of the cafe/coffee shop, properly capitalized as a business name (e.g., "Blue Bottle", "Stumptown Coffee", "Intelligentsia")'
+        description: 'The name of the cafe/coffee shop EXACTLY as mentioned by the user, just properly capitalized (e.g., if user says "polite coffee" return "Polite Coffee", if user says "blue bottle" return "Blue Bottle"). Do NOT substitute or correct the name - use what the user typed.'
       },
       location_hint: {
         type: 'string',
@@ -136,7 +136,7 @@ router.post('/parse', async (req, res) => {
 
 IMPORTANT FORMATTING RULES:
 1. CAPITALIZE drink_type properly: "Cortado", "Pour Over", "Flat White", "Cold Brew" (not "cortado" or "pour over")
-2. CAPITALIZE cafe_name as a proper business name: "Blue Bottle", "Stumptown Coffee" (not "blue bottle")
+2. EXTRACT cafe_name EXACTLY as the user typed it, just capitalize it properly. If user says "polite coffee" -> "Polite Coffee". If user says "sightglass" -> "Sightglass". Do NOT substitute with different cafe names - use exactly what the user mentioned.
 3. Extract ANY location info (city, neighborhood, landmark, street) into location_hint - this helps find the cafe on Google Maps
 4. ONLY put truly extra info in notes - do NOT repeat drink type, cafe, location, price, sentiment, or flavors
 
