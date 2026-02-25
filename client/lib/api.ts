@@ -42,7 +42,7 @@ export interface Drink {
   id: number;
   cafe_id: number;
   drink_type: string;
-  rating: number;
+  rating: number | null;
   notes: string | null;
   logged_at: string;
   cafe_name?: string;

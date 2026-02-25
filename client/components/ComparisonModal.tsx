@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Coffee } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { QualityTier, RankedDrink } from '@/lib/api';
+import { getPhotoUrl } from '@/lib/photos';
 
 interface DrinkToRank {
   id: number;
@@ -32,19 +33,14 @@ export function ComparisonModal({ drink, tierRankings, onComplete, onCancel }: C
   const [high, setHigh] = useState(tierRankings.length);
   const [currentIndex, setCurrentIndex] = useState(Math.floor(tierRankings.length / 2));
   const [comparisons, setComparisons] = useState(0);
-  const [done, setDone] = useState(false);
-  const [finalRank, setFinalRank] = useState<number | null>(null);
 
   const maxComparisons = Math.ceil(Math.log2(tierRankings.length + 1));
   const comparisonDrink = tierRankings[currentIndex];
   const colors = tierColors[drink.tier];
 
-  useEffect(() => {
-    if (low >= high) {
-      setDone(true);
-      setFinalRank(low + 1);
-    }
-  }, [low, high]);
+  // Derived directly from state — no useEffect needed
+  const done = low >= high;
+  const finalRank = done ? low + 1 : null;
 
   const handleChoice = (newDrinkIsBetter: boolean) => {
     setComparisons(c => c + 1);
@@ -66,12 +62,6 @@ export function ComparisonModal({ drink, tierRankings, onComplete, onCancel }: C
     if (finalRank !== null) {
       onComplete(finalRank);
     }
-  };
-
-  const getPhotoUrl = (photoRef: string | null | undefined) => {
-    if (!photoRef) return null;
-    if (photoRef.startsWith('http')) return photoRef;
-    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=200&photo_reference=${photoRef}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
   };
 
   const DrinkCard = ({

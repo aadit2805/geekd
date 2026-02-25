@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getRankings, removeFromRankings, type RankedDrink, type QualityTier } from '@/lib/api';
+import { getPhotoUrl } from '@/lib/photos';
 import { Trash2, Coffee } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -38,12 +39,6 @@ export default function RankingsPage() {
     } catch (error) {
       console.error('Error removing drink:', error);
     }
-  };
-
-  const getPhotoUrl = (photoRef: string | null | undefined) => {
-    if (!photoRef) return null;
-    if (photoRef.startsWith('http')) return photoRef;
-    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=100&photo_reference=${photoRef}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
   };
 
   // Group rankings by tier
@@ -115,6 +110,7 @@ export default function RankingsPage() {
                 {/* Drinks List */}
                 <div className="space-y-2">
                   {tierDrinks
+                    .slice()
                     .sort((a, b) => b.score - a.score)
                     .map((drink, index) => (
                     <motion.div

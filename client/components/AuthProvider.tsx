@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { setAuthTokenGetter } from '@/lib/api';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -13,7 +13,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthTokenGetter(getToken);
       setReady(true);
     }
-  }, [isLoaded, isSignedIn, getToken]);
+  }, [isLoaded, getToken]);
 
   // Don't render children until Clerk is loaded and token getter is set
   if (!ready) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLoadScript } from '@react-google-maps/api';
 
 const libraries: ("places")[] = ['places'];
@@ -19,10 +19,6 @@ interface PlacesAutocompleteProps {
   onPlaceSelect: (place: PlaceResult) => void;
   placeholder?: string;
   initialValue?: string;
-}
-
-export interface PlacesAutocompleteRef {
-  searchPlace: (query: string) => Promise<PlaceResult | null>;
 }
 
 // Utility function to search for a place by text query
