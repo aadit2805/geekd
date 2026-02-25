@@ -7,260 +7,249 @@ router.get('/', async (req, res) => {
   try {
     const userId = req.userId;
 
-    // Total drinks
-    const totalResult = await pool.query(
-      'SELECT COUNT(*) as total FROM drinks WHERE user_id = $1',
-      [userId]
-    );
-    const total_drinks = parseInt(totalResult.rows[0].total);
-
-    // Total unique cafes visited
-    const cafesVisitedResult = await pool.query(
-      'SELECT COUNT(DISTINCT cafe_id) as count FROM drinks WHERE user_id = $1',
-      [userId]
-    );
-    const cafes_visited = parseInt(cafesVisitedResult.rows[0].count);
-
-    // Total unique drink types tried
-    const drinkTypesResult = await pool.query(
-      'SELECT COUNT(DISTINCT drink_type) as count FROM drinks WHERE user_id = $1',
-      [userId]
-    );
-    const drink_types_tried = parseInt(drinkTypesResult.rows[0].count);
-
-    // Current daily streak (consecutive days with at least one drink)
-    const dailyStreakResult = await pool.query(`
-      WITH daily_logs AS (
-        SELECT DISTINCT DATE(logged_at) as log_date
-        FROM drinks
-        WHERE user_id = $1
-        ORDER BY log_date DESC
+    // Run all independent queries in parallel
+    const [
+      totalResult,
+      cafesVisitedResult,
+      drinkTypesResult,
+      dailyStreakResult,
+      longestDailyStreakResult,
+      thisWeekResult,
+      thisMonthResult,
+      avgResult,
+      topCafesResult,
+      drinkTypeBreakdownResult,
+      trendsResult,
+      bestDayResult,
+      bestTimeResult,
+      streakResult,
+      longestStreakResult,
+      priceStatsResult,
+      monthSpendResult,
+      priceByCafeResult,
+      flavorTagsResult,
+    ] = await Promise.all([
+      // Total drinks
+      pool.query(
+        'SELECT COUNT(*) as total FROM drinks WHERE user_id = $1',
+        [userId]
       ),
-      streak_calc AS (
-        SELECT log_date,
-               log_date - (ROW_NUMBER() OVER (ORDER BY log_date DESC))::int as grp
-        FROM daily_logs
-      )
-      SELECT COUNT(*) as streak
-      FROM streak_calc
-      WHERE grp = (SELECT grp FROM streak_calc WHERE log_date = CURRENT_DATE OR log_date = CURRENT_DATE - 1 LIMIT 1)
-    `, [userId]);
-    const current_streak = parseInt(dailyStreakResult.rows[0]?.streak || '0');
-
-    // Longest daily streak ever
-    const longestDailyStreakResult = await pool.query(`
-      WITH daily_logs AS (
-        SELECT DISTINCT DATE(logged_at) as log_date
-        FROM drinks
-        WHERE user_id = $1
-        ORDER BY log_date
+      // Total unique cafes visited
+      pool.query(
+        'SELECT COUNT(DISTINCT cafe_id) as count FROM drinks WHERE user_id = $1',
+        [userId]
       ),
-      streak_calc AS (
-        SELECT log_date,
-               log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int as grp
-        FROM daily_logs
-      )
-      SELECT COUNT(*) as streak
-      FROM streak_calc
-      GROUP BY grp
-      ORDER BY streak DESC
-      LIMIT 1
-    `, [userId]);
-    const longest_streak = parseInt(longestDailyStreakResult.rows[0]?.streak || '0');
-
-    // This week's drinks
-    const thisWeekResult = await pool.query(`
-      SELECT COUNT(*) as count
-      FROM drinks
-      WHERE user_id = $1 AND logged_at >= DATE_TRUNC('week', CURRENT_DATE)
-    `, [userId]);
-    const drinks_this_week = parseInt(thisWeekResult.rows[0].count);
-
-    // This month's drinks
-    const thisMonthResult = await pool.query(`
-      SELECT COUNT(*) as count
-      FROM drinks
-      WHERE user_id = $1 AND logged_at >= DATE_TRUNC('month', CURRENT_DATE)
-    `, [userId]);
-    const drinks_this_month = parseInt(thisMonthResult.rows[0].count);
-
-    // Average rating
-    const avgResult = await pool.query(
-      'SELECT AVG(rating) as avg FROM drinks WHERE user_id = $1',
-      [userId]
-    );
-    const average_rating = parseFloat(avgResult.rows[0].avg) || 0;
-
-    // Top cafes by visit count
-    const topCafesResult = await pool.query(`
-      SELECT c.name as cafe_name, COUNT(d.id) as visit_count
-      FROM cafes c
-      JOIN drinks d ON c.id = d.cafe_id
-      WHERE d.user_id = $1
-      GROUP BY c.id, c.name
-      ORDER BY visit_count DESC
-      LIMIT 5
-    `, [userId]);
-
-    // Drink type breakdown
-    const drinkTypeBreakdownResult = await pool.query(`
-      SELECT drink_type, COUNT(*) as count
-      FROM drinks
-      WHERE user_id = $1
-      GROUP BY drink_type
-      ORDER BY count DESC
-    `, [userId]);
-
-    // Rating trends over time (weekly averages for last 12 weeks)
-    const trendsResult = await pool.query(`
-      SELECT
-        DATE_TRUNC('week', logged_at) as week,
-        ROUND(AVG(rating)::numeric, 2) as avg_rating,
-        COUNT(*) as drink_count
-      FROM drinks
-      WHERE user_id = $1 AND logged_at > NOW() - INTERVAL '12 weeks'
-      GROUP BY DATE_TRUNC('week', logged_at)
-      ORDER BY week ASC
-    `, [userId]);
-
-    // Best day of week
-    const bestDayResult = await pool.query(`
-      SELECT
-        EXTRACT(DOW FROM logged_at) as day_of_week,
-        ROUND(AVG(rating)::numeric, 2) as avg_rating,
-        COUNT(*) as drink_count
-      FROM drinks
-      WHERE user_id = $1
-      GROUP BY EXTRACT(DOW FROM logged_at)
-      ORDER BY avg_rating DESC
-    `, [userId]);
-
-    // Best time of day (morning, afternoon, evening)
-    const bestTimeResult = await pool.query(`
-      SELECT
-        CASE
-          WHEN EXTRACT(HOUR FROM logged_at) < 12 THEN 'morning'
-          WHEN EXTRACT(HOUR FROM logged_at) < 17 THEN 'afternoon'
-          ELSE 'evening'
-        END as time_of_day,
-        ROUND(AVG(rating)::numeric, 2) as avg_rating,
-        COUNT(*) as drink_count
-      FROM drinks
-      WHERE user_id = $1
-      GROUP BY time_of_day
-      ORDER BY avg_rating DESC
-    `, [userId]);
-
-    // Current streak (consecutive visits to same cafe)
-    const streakResult = await pool.query(`
-      WITH ordered_drinks AS (
-        SELECT cafe_id, logged_at,
-               LAG(cafe_id) OVER (ORDER BY logged_at) as prev_cafe_id
-        FROM drinks
-        WHERE user_id = $1
-        ORDER BY logged_at DESC
+      // Total unique drink types tried
+      pool.query(
+        'SELECT COUNT(DISTINCT drink_type) as count FROM drinks WHERE user_id = $1',
+        [userId]
       ),
-      streak AS (
-        SELECT cafe_id
-        FROM ordered_drinks
-        WHERE cafe_id = prev_cafe_id OR prev_cafe_id IS NULL
-        LIMIT 100
-      )
-      SELECT
-        d.cafe_id,
-        c.name as cafe_name,
-        COUNT(*) as streak_count
-      FROM (
-        SELECT cafe_id, logged_at,
-               cafe_id != LAG(cafe_id, 1, cafe_id) OVER (ORDER BY logged_at DESC) as is_break
+      // Current daily streak
+      pool.query(`
+        WITH daily_logs AS (
+          SELECT DISTINCT DATE(logged_at) as log_date
+          FROM drinks
+          WHERE user_id = $1
+          ORDER BY log_date DESC
+        ),
+        streak_calc AS (
+          SELECT log_date,
+                 log_date - (ROW_NUMBER() OVER (ORDER BY log_date DESC))::int as grp
+          FROM daily_logs
+        )
+        SELECT COUNT(*) as streak
+        FROM streak_calc
+        WHERE grp = (SELECT grp FROM streak_calc WHERE log_date = CURRENT_DATE OR log_date = CURRENT_DATE - 1 LIMIT 1)
+      `, [userId]),
+      // Longest daily streak ever
+      pool.query(`
+        WITH daily_logs AS (
+          SELECT DISTINCT DATE(logged_at) as log_date
+          FROM drinks
+          WHERE user_id = $1
+          ORDER BY log_date
+        ),
+        streak_calc AS (
+          SELECT log_date,
+                 log_date - (ROW_NUMBER() OVER (ORDER BY log_date))::int as grp
+          FROM daily_logs
+        )
+        SELECT COUNT(*) as streak
+        FROM streak_calc
+        GROUP BY grp
+        ORDER BY streak DESC
+        LIMIT 1
+      `, [userId]),
+      // This week's drinks
+      pool.query(`
+        SELECT COUNT(*) as count
+        FROM drinks
+        WHERE user_id = $1 AND logged_at >= DATE_TRUNC('week', CURRENT_DATE)
+      `, [userId]),
+      // This month's drinks
+      pool.query(`
+        SELECT COUNT(*) as count
+        FROM drinks
+        WHERE user_id = $1 AND logged_at >= DATE_TRUNC('month', CURRENT_DATE)
+      `, [userId]),
+      // Average rating
+      pool.query(
+        'SELECT AVG(rating) as avg FROM drinks WHERE user_id = $1',
+        [userId]
+      ),
+      // Top cafes by visit count
+      pool.query(`
+        SELECT c.name as cafe_name, COUNT(d.id) as visit_count
+        FROM cafes c
+        JOIN drinks d ON c.id = d.cafe_id
+        WHERE d.user_id = $1
+        GROUP BY c.id, c.name
+        ORDER BY visit_count DESC
+        LIMIT 5
+      `, [userId]),
+      // Drink type breakdown
+      pool.query(`
+        SELECT drink_type, COUNT(*) as count
         FROM drinks
         WHERE user_id = $1
-        ORDER BY logged_at DESC
-      ) d
-      JOIN cafes c ON d.cafe_id = c.id
-      WHERE NOT EXISTS (
-        SELECT 1 FROM (
+        GROUP BY drink_type
+        ORDER BY count DESC
+      `, [userId]),
+      // Rating trends (weekly averages for last 12 weeks)
+      pool.query(`
+        SELECT
+          DATE_TRUNC('week', logged_at) as week,
+          ROUND(AVG(rating)::numeric, 2) as avg_rating,
+          COUNT(*) as drink_count
+        FROM drinks
+        WHERE user_id = $1 AND logged_at > NOW() - INTERVAL '12 weeks'
+        GROUP BY DATE_TRUNC('week', logged_at)
+        ORDER BY week ASC
+      `, [userId]),
+      // Best day of week
+      pool.query(`
+        SELECT
+          EXTRACT(DOW FROM logged_at) as day_of_week,
+          ROUND(AVG(rating)::numeric, 2) as avg_rating,
+          COUNT(*) as drink_count
+        FROM drinks
+        WHERE user_id = $1
+        GROUP BY EXTRACT(DOW FROM logged_at)
+        ORDER BY avg_rating DESC
+      `, [userId]),
+      // Best time of day
+      pool.query(`
+        SELECT
+          CASE
+            WHEN EXTRACT(HOUR FROM logged_at) < 12 THEN 'morning'
+            WHEN EXTRACT(HOUR FROM logged_at) < 17 THEN 'afternoon'
+            ELSE 'evening'
+          END as time_of_day,
+          ROUND(AVG(rating)::numeric, 2) as avg_rating,
+          COUNT(*) as drink_count
+        FROM drinks
+        WHERE user_id = $1
+        GROUP BY time_of_day
+        ORDER BY avg_rating DESC
+      `, [userId]),
+      // Current cafe streak
+      pool.query(`
+        WITH ordered_drinks AS (
           SELECT cafe_id, logged_at,
                  cafe_id != LAG(cafe_id, 1, cafe_id) OVER (ORDER BY logged_at DESC) as is_break
           FROM drinks
           WHERE user_id = $1
-        ) sub
-        WHERE sub.is_break = true AND sub.logged_at > d.logged_at
-      )
-      GROUP BY d.cafe_id, c.name
-      LIMIT 1
-    `, [userId]);
-
-    // Longest streak ever
-    const longestStreakResult = await pool.query(`
-      WITH streaks AS (
+          ORDER BY logged_at DESC
+        )
         SELECT
-          cafe_id,
-          logged_at,
-          cafe_id != LAG(cafe_id) OVER (ORDER BY logged_at) AS new_streak
+          d.cafe_id,
+          c.name as cafe_name,
+          COUNT(*) as streak_count
+        FROM ordered_drinks d
+        JOIN cafes c ON d.cafe_id = c.id
+        WHERE NOT EXISTS (
+          SELECT 1 FROM ordered_drinks sub
+          WHERE sub.is_break = true AND sub.logged_at > d.logged_at
+        )
+        GROUP BY d.cafe_id, c.name
+        LIMIT 1
+      `, [userId]),
+      // Longest cafe streak ever
+      pool.query(`
+        WITH streaks AS (
+          SELECT
+            cafe_id,
+            logged_at,
+            cafe_id != LAG(cafe_id) OVER (ORDER BY logged_at) AS new_streak
+          FROM drinks
+          WHERE user_id = $1
+        ),
+        streak_groups AS (
+          SELECT
+            cafe_id,
+            SUM(CASE WHEN new_streak THEN 1 ELSE 0 END) OVER (ORDER BY logged_at) as streak_id
+          FROM streaks
+        )
+        SELECT
+          c.name as cafe_name,
+          COUNT(*) as streak_count
+        FROM streak_groups sg
+        JOIN cafes c ON sg.cafe_id = c.id
+        GROUP BY sg.streak_id, c.name
+        ORDER BY streak_count DESC
+        LIMIT 1
+      `, [userId]),
+      // Price statistics
+      pool.query(`
+        SELECT
+          COALESCE(SUM(price), 0) as total_spent,
+          COALESCE(AVG(price), 0) as avg_price,
+          COUNT(price) as drinks_with_price
         FROM drinks
-        WHERE user_id = $1
-      ),
-      streak_groups AS (
-        SELECT
-          cafe_id,
-          SUM(CASE WHEN new_streak THEN 1 ELSE 0 END) OVER (ORDER BY logged_at) as streak_id
-        FROM streaks
-      )
-      SELECT
-        c.name as cafe_name,
-        COUNT(*) as streak_count
-      FROM streak_groups sg
-      JOIN cafes c ON sg.cafe_id = c.id
-      GROUP BY sg.streak_id, c.name
-      ORDER BY streak_count DESC
-      LIMIT 1
-    `, [userId]);
+        WHERE user_id = $1 AND price IS NOT NULL
+      `, [userId]),
+      // This month's spending
+      pool.query(`
+        SELECT COALESCE(SUM(price), 0) as total
+        FROM drinks
+        WHERE user_id = $1 AND price IS NOT NULL AND logged_at >= DATE_TRUNC('month', CURRENT_DATE)
+      `, [userId]),
+      // Price by cafe
+      pool.query(`
+        SELECT c.name as cafe_name, ROUND(AVG(d.price)::numeric, 2) as avg_price, COUNT(*) as count
+        FROM drinks d
+        JOIN cafes c ON d.cafe_id = c.id
+        WHERE d.user_id = $1 AND d.price IS NOT NULL
+        GROUP BY c.id, c.name
+        HAVING COUNT(*) >= 2
+        ORDER BY avg_price DESC
+      `, [userId]),
+      // Flavor tags
+      pool.query(`
+        SELECT unnest(flavor_tags) as tag, COUNT(*) as count
+        FROM drinks
+        WHERE user_id = $1 AND flavor_tags IS NOT NULL
+        GROUP BY tag
+        ORDER BY count DESC
+        LIMIT 10
+      `, [userId]),
+    ]);
 
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    // Price statistics
-    const priceStatsResult = await pool.query(`
-      SELECT
-        COALESCE(SUM(price), 0) as total_spent,
-        COALESCE(AVG(price), 0) as avg_price,
-        COUNT(price) as drinks_with_price
-      FROM drinks
-      WHERE user_id = $1 AND price IS NOT NULL
-    `, [userId]);
+    const total_drinks = parseInt(totalResult.rows[0].total);
+    const cafes_visited = parseInt(cafesVisitedResult.rows[0].count);
+    const drink_types_tried = parseInt(drinkTypesResult.rows[0].count);
+    const current_streak = parseInt(dailyStreakResult.rows[0]?.streak || '0');
+    const longest_streak = parseInt(longestDailyStreakResult.rows[0]?.streak || '0');
+    const drinks_this_week = parseInt(thisWeekResult.rows[0].count);
+    const drinks_this_month = parseInt(thisMonthResult.rows[0].count);
+    const average_rating = parseFloat(avgResult.rows[0].avg) || 0;
 
     const totalSpent = parseFloat(priceStatsResult.rows[0].total_spent) || 0;
     const avgPrice = parseFloat(priceStatsResult.rows[0].avg_price) || 0;
     const drinksWithPrice = parseInt(priceStatsResult.rows[0].drinks_with_price) || 0;
-
-    // This month's spending
-    const monthSpendResult = await pool.query(`
-      SELECT COALESCE(SUM(price), 0) as total
-      FROM drinks
-      WHERE user_id = $1 AND price IS NOT NULL AND logged_at >= DATE_TRUNC('month', CURRENT_DATE)
-    `, [userId]);
     const spentThisMonth = parseFloat(monthSpendResult.rows[0].total) || 0;
 
-    // Price by cafe (avg)
-    const priceByCafeResult = await pool.query(`
-      SELECT c.name as cafe_name, ROUND(AVG(d.price)::numeric, 2) as avg_price, COUNT(*) as count
-      FROM drinks d
-      JOIN cafes c ON d.cafe_id = c.id
-      WHERE d.user_id = $1 AND d.price IS NOT NULL
-      GROUP BY c.id, c.name
-      HAVING COUNT(*) >= 2
-      ORDER BY avg_price DESC
-    `, [userId]);
-
-    // Flavor tag breakdown
-    const flavorTagsResult = await pool.query(`
-      SELECT unnest(flavor_tags) as tag, COUNT(*) as count
-      FROM drinks
-      WHERE user_id = $1 AND flavor_tags IS NOT NULL
-      GROUP BY tag
-      ORDER BY count DESC
-      LIMIT 10
-    `, [userId]);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
     // Calculate milestones
     const milestones = [];
@@ -313,13 +302,11 @@ router.get('/', async (req, res) => {
         cafe_name: longestStreakResult.rows[0].cafe_name,
         count: parseInt(longestStreakResult.rows[0].streak_count)
       } : null,
-      // Price stats
       total_spent: Math.round(totalSpent * 100) / 100,
       avg_price: Math.round(avgPrice * 100) / 100,
       spent_this_month: Math.round(spentThisMonth * 100) / 100,
       drinks_with_price: drinksWithPrice,
       price_by_cafe: priceByCafeResult.rows,
-      // Flavor tags
       top_flavor_tags: flavorTagsResult.rows,
     });
   } catch (error) {

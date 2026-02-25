@@ -21,7 +21,7 @@ const calculateScore = (tier: string, rank: number, totalInTier: number): number
   return Math.round((range.max - position * (range.max - range.min)) * 10) / 10;
 };
 
-// Recalculate all scores in a tier after ranking changes
+// Recalculate all scores in a tier after ranking changes (batched single query)
 const recalculateScores = async (userId: string, tier: string) => {
   const result = await pool.query(`
     SELECT id, tier_rank FROM drink_rankings
@@ -30,13 +30,23 @@ const recalculateScores = async (userId: string, tier: string) => {
   `, [userId, tier]);
 
   const total = result.rows.length;
-  for (const row of result.rows) {
+  if (total === 0) return;
+
+  // Build a single UPDATE with CASE expression instead of N separate queries
+  const ids: number[] = [];
+  const cases: string[] = [];
+  result.rows.forEach((row, i) => {
     const score = calculateScore(tier, row.tier_rank, total);
-    await pool.query(
-      'UPDATE drink_rankings SET score = $1, updated_at = NOW() WHERE id = $2',
-      [score, row.id]
-    );
-  }
+    ids.push(row.id);
+    cases.push(`WHEN ${row.id} THEN ${score}`);
+  });
+
+  await pool.query(`
+    UPDATE drink_rankings
+    SET score = CASE id ${cases.join(' ')} END,
+        updated_at = NOW()
+    WHERE id = ANY($1)
+  `, [ids]);
 };
 
 // GET all rankings for user (with drink and cafe details)
@@ -217,20 +227,12 @@ router.post('/', async (req, res) => {
       WHERE user_id = $1 AND quality_tier = $2 AND tier_rank >= $3
     `, [userId, tier, rank]);
 
-    // Get count for score calculation
-    const countResult = await pool.query(
-      'SELECT COUNT(*) as count FROM drink_rankings WHERE user_id = $1 AND quality_tier = $2',
-      [userId, tier]
-    );
-    const totalInTier = parseInt(countResult.rows[0].count) + 1;
-    const score = calculateScore(tier, rank, totalInTier);
-
-    // Insert new ranking
+    // Insert new ranking (score will be set by recalculateScores below)
     const result = await pool.query(`
       INSERT INTO drink_rankings (user_id, drink_id, quality_tier, tier_rank, score)
-      VALUES ($1, $2, $3, $4, $5)
+      VALUES ($1, $2, $3, $4, 0)
       RETURNING *
-    `, [userId, drink_id, tier, rank, score]);
+    `, [userId, drink_id, tier, rank]);
 
     // Update the drink's quality_tier
     await pool.query(
@@ -239,7 +241,7 @@ router.post('/', async (req, res) => {
     );
 
     // Recalculate all scores in this tier
-    await recalculateScores(userId!, tier);
+    await recalculateScores(userId as string, tier);
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -281,7 +283,7 @@ router.put('/reorder', async (req, res) => {
       await client.query('COMMIT');
 
       // Recalculate scores
-      await recalculateScores(userId!, tier);
+      await recalculateScores(userId as string, tier);
 
       res.json({ success: true });
     } catch (err) {
@@ -328,7 +330,7 @@ router.delete('/:drinkId', async (req, res) => {
     `, [userId, tier, deletedRank]);
 
     // Recalculate scores
-    await recalculateScores(userId!, tier);
+    await recalculateScores(userId as string, tier);
 
     res.json({ success: true });
   } catch (error) {

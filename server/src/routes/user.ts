@@ -8,10 +8,10 @@ router.delete('/data', async (req, res) => {
   try {
     const userId = req.userId;
 
-    // Delete drinks first (foreign key constraint)
+    // Delete in dependency order
+    await pool.query('DELETE FROM drink_rankings WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM wishlist WHERE user_id = $1', [userId]);
     await pool.query('DELETE FROM drinks WHERE user_id = $1', [userId]);
-
-    // Then delete cafes
     await pool.query('DELETE FROM cafes WHERE user_id = $1', [userId]);
 
     res.json({ message: 'All data deleted successfully' });
