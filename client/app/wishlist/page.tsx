@@ -45,8 +45,8 @@ export default function WishlistPage() {
       });
       setWishlist(prev => [newItem, ...prev]);
       setShowAdd(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to add to wishlist');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add to wishlist');
     }
   };
 

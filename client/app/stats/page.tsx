@@ -181,7 +181,7 @@ export default function StatsPage() {
             <div className="bg-white border border-(--taupe)/20 rounded-xl p-4">
               <p className="text-xs text-taupe-dark mb-2">Price by cafe</p>
               <div className="space-y-2">
-                {stats.price_by_cafe.slice(0, 3).map((cafe, i) => (
+                {stats.price_by_cafe.slice(0, 3).map((cafe) => (
                   <div key={cafe.cafe_name} className="flex justify-between text-sm">
                     <span className="text-coffee truncate">{cafe.cafe_name}</span>
                     <span className="text-taupe-dark">${Number(cafe.avg_price).toFixed(2)}/cup</span>
@@ -258,8 +258,9 @@ export default function StatsPage() {
         >
           <h2 className="text-xs font-medium text-taupe-dark mb-3">Favorite Drinks</h2>
           <div className="bg-white border border-(--taupe)/20 rounded-xl p-4 space-y-3">
-            {stats.drink_type_breakdown.slice(0, 5).map((type, i) => {
+            {(() => {
               const max = Math.max(...stats.drink_type_breakdown.map(t => Number(t.count)));
+              return stats.drink_type_breakdown.slice(0, 5).map((type, i) => {
               const pct = (Number(type.count) / max) * 100;
               return (
                 <div key={type.drink_type}>
@@ -280,7 +281,8 @@ export default function StatsPage() {
                   </div>
                 </div>
               );
-            })}
+            });
+            })()}
           </div>
         </motion.div>
       )}
