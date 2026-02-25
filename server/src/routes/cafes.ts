@@ -1,14 +1,8 @@
 import { Router } from 'express';
 import { pool } from '../db';
+import { sanitizeText } from '../sanitize';
 
 const router = Router();
-
-// Helper function to sanitize text input (prevent XSS)
-const sanitizeText = (text: string | null | undefined): string | null => {
-  if (!text) return null;
-  // Remove any HTML tags and limit length
-  return text.replace(/<[^>]*>/g, '').substring(0, 500);
-};
 
 // GET all cafes (sorted by most recently visited, then by name)
 router.get('/', async (req, res) => {
@@ -65,13 +59,11 @@ router.post('/', async (req, res) => {
     // Check if cafe with same place_id already exists for this user
     if (place_id) {
       const existing = await pool.query(
-        'SELECT id FROM cafes WHERE place_id = $1 AND user_id = $2',
+        'SELECT * FROM cafes WHERE place_id = $1 AND user_id = $2',
         [place_id, userId]
       );
       if (existing.rows.length > 0) {
-        // Return existing cafe instead of creating duplicate
-        const existingCafe = await pool.query('SELECT * FROM cafes WHERE id = $1', [existing.rows[0].id]);
-        return res.status(200).json(existingCafe.rows[0]);
+        return res.status(200).json(existing.rows[0]);
       }
     }
 
@@ -84,8 +76,8 @@ router.post('/', async (req, res) => {
         sanitizeText(city),
         place_id || null,
         photo_reference || null,
-        lat || null,
-        lng || null,
+        lat ?? null,
+        lng ?? null,
         userId
       ]
     );

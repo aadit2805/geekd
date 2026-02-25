@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../db';
+import { sanitizeText, sanitizeImageUrl } from '../sanitize';
 
 const router = Router();
 
@@ -58,7 +59,7 @@ router.get('/', async (req, res) => {
       WHERE d.user_id = $1
     `;
 
-    const params: any[] = [userId];
+    const params: unknown[] = [userId];
 
     if (cafe_id) {
       query += ' AND d.cafe_id = $2';
@@ -101,28 +102,6 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch drink' });
   }
 });
-
-// Helper function to sanitize text input (prevent XSS)
-const sanitizeText = (text: string | null | undefined, maxLength = 1000): string | null => {
-  if (!text) return null;
-  // Remove any HTML tags and limit length
-  return text.replace(/<[^>]*>/g, '').substring(0, maxLength);
-};
-
-// Validate base64 image data URL
-const sanitizeImageUrl = (url: string | null | undefined): string | null => {
-  if (!url || typeof url !== 'string') return null;
-  // Only allow data URLs with image types
-  const trimmed = url.trim();
-  if (trimmed.startsWith('data:image/')) {
-    return trimmed;
-  }
-  // Also allow regular URLs for external images
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed.substring(0, 2000); // Limit URL length
-  }
-  return null;
-};
 
 // POST create drink
 router.post('/', async (req, res) => {
@@ -175,7 +154,7 @@ router.post('/', async (req, res) => {
         sanitizeText(notes),
         logged_at || new Date(),
         userId,
-        price || null,
+        price ?? null,
         flavor_tags || null,
         sanitizeImageUrl(photo_url)
       ]
